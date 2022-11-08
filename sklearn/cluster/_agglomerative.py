@@ -24,6 +24,7 @@ from ..utils import check_array
 from ..utils._fast_dict import IntFloatDict
 from ..utils.graph import _fix_connected_components
 from ..utils._param_validation import Hidden, Interval, StrOptions, HasMethods
+from ..utils._param_validation import validate_params
 from ..utils.validation import check_memory
 
 # mypy error: Module 'sklearn.cluster' has no attribute '_hierarchical_fast'
@@ -167,8 +168,14 @@ def _single_linkage_tree(
 
 ###############################################################################
 # Hierarchical tree building functions
-
-
+@validate_params(
+    {
+        "X": ["array-like"],
+        "connectivity": ["sparse matrix", None],
+        "n_clusters": [Interval(Integral, 1, None, closed="left"), None],
+        "return_distance": [bool],
+    }
+)
 def ward_tree(X, *, connectivity=None, n_clusters=None, return_distance=False):
     """Ward clustering based on a Feature matrix.
 
@@ -258,17 +265,6 @@ def ward_tree(X, *, connectivity=None, n_clusters=None, return_distance=False):
 
     if connectivity is None:
         from scipy.cluster import hierarchy  # imports PIL
-
-        if n_clusters is not None:
-            warnings.warn(
-                "Partial build of the tree is implemented "
-                "only for structured clustering (i.e. with "
-                "explicit connectivity). The algorithm "
-                "will build the full tree and only "
-                "retain the lower branches required "
-                "for the specified number of clusters",
-                stacklevel=2,
-            )
         X = np.require(X, requirements="W")
         out = hierarchy.ward(X)
         children_ = out[:, :2].astype(np.intp)
